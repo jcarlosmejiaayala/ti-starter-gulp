@@ -9,7 +9,7 @@
   "scripts": {
     "test:gulp": "iron-node node_modules/gulp/bin/gulp.js start:dev",
     "start": "gulp",
-    "init": "npm update -d && npm run start",
+    "init": "npm i ti-inspector -g & npm update -d && npm run start",
     "start:dev": "gulp start:dev"
   },
   "repository": {
