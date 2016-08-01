@@ -1,6 +1,7 @@
 import gulp from 'gulp'
 import gulpLoadPlugins from 'gulp-load-plugins'
 import runSequence from 'run-sequence'
+import minimist from 'minimist'
 import {
 	dirname
 } from 'path'
@@ -14,12 +15,20 @@ import {
 	obj
 } from 'through2'
 
+const {
+	ui,
+	production:isProd
+} = minimist(process.argv.slice(2))
 const nodeKillProcessesCmd = ['killall', 'node']
-const iosStartCmd = ['ti', 'build', '-p', 'ios', '-t', 'simulator', '--tall', '--retina', '--debug-host',
+const iosStartCmd = ['ti', 'build', '-p', 'ios', '--tall', '--retina', '--debug-host',
 	'localhost:8999', '--quiet'
 ]
+const iosStartUICmd = ['ti', 'build', '-p', 'ios', '--faster']
 const iosKillCmd = ['killall', 'iOS Simulator']
 const tiInspectorCmd = ['ti-inspector']
+const startDevCommonsCmd = ['node:kill-processes', 'validateXML', 'prettify']
+const startDevCmd = ['ti-inspector:start', 'ios:start']
+const startDevUICmd = ['ios:start-ui']
 const rootPath = './'
 const appAndNestedDirectoriesPath = 'app/**'
 const jsAppFilesPath = `${appAndNestedDirectoriesPath}/*.js`
@@ -51,19 +60,19 @@ const spawnProcess = (_cmd, _cb) => {
 }
 
 const validateXML = () => obj(({
-	contents,
-	isNull,
-	isStream
+	contents:_contents,
+	isNull:_isNull,
+	isStream:_isStream
 }, _enc, _cb) => {
-	if (isNull()) {
+	if (_isNull()) {
 		_cb(null)
 		return
 	}
-	if (isStream()) {
-		_cb(new Error(PLUGIN_NAME, 'Streaming not supported'))
+	if (_isStream()) {
+		_cb(new Error('Streaming not supported'))
 		return
 	}
-	parseString(contents.toString('utf8'), (_err, _result) => _cb(_err ? new Error(_err) : null))
+	parseString(_contents.toString('utf8'), (_err, _result) => _cb(_err ? new Error(_err) : null))
 })
 
 gulp.task('jscs', () => gulp
@@ -75,7 +84,7 @@ gulp.task('jscs', () => gulp
 gulp.task('prettify', () => gulp
 	.src(prettifyFilesPath)
 	.pipe($.jsbeautifier(jsbeautifierOptions))
-	.pipe($.jsbeautifier.reporter())
+	.pipe($.if(isProd, $.jsbeautifier.reporter()))
 	.pipe(gulp.dest('./app/')))
 
 gulp.task('validateXML', () => gulp
@@ -83,16 +92,16 @@ gulp.task('validateXML', () => gulp
 	.pipe(validateXML()))
 
 gulp.task('watch', () => {
-	gulp.watch(`${appAndNestedDirectoriesPath}/*.+(js|tss|xml|json)`, ['ios:start'])
+	if (!ui) {
+		gulp.watch(`${appAndNestedDirectoriesPath}/*.+(js|tss|xml|json)`, ['ios:start'])
+	}
 	gulp.watch(xmlFilesPath, ['validateXML'])
 	gulp.watch(jsAppFilesPath, ['jscs'])
 })
-
 gulp.task('node:kill-processes', spawnProcess.bind(null, nodeKillProcessesCmd))
 gulp.task('ti-inspector:start', spawnProcess.bind(null, tiInspectorCmd))
 gulp.task('ios:kill', spawnProcess.bind(null, iosKillCmd))
 gulp.task('ios:start', ['ios:kill'], spawnProcess.bind(null, iosStartCmd))
-gulp.task('start:dev', _cb => runSequence('node:kill-processes', 'validateXML', 'prettify', 'ti-inspector:start',
-	'ios:start',
-	'watch', _cb))
+gulp.task('ios:start-ui', spawnProcess.bind(null, iosStartUICmd))
+gulp.task('start', _cb => runSequence(...startDevCommonsCmd, ...(ui ? startDevUICmd : startDevCmd), 'watch', _cb))
 gulp.task('default', _cb => runSequence('validateXML', 'prettify', 'ios:start', _cb))
