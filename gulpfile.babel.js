@@ -17,8 +17,10 @@ import {
 
 const {
 	ui,
-	production:isProd
+	production: isProd,
+	clean: shouldClean,
 } = minimist(process.argv.slice(2))
+const tiCleanProject = ['ti', 'clean']
 const nodeKillProcessesCmd = ['killall', 'node']
 const iosStartCmd = ['ti', 'build', '-p', 'ios', '--tall', '--retina', '--debug-host',
 	'localhost:8999', '--quiet'
@@ -26,7 +28,9 @@ const iosStartCmd = ['ti', 'build', '-p', 'ios', '--tall', '--retina', '--debug-
 const iosStartUICmd = ['ti', 'build', '-p', 'ios', '--faster']
 const iosKillCmd = ['killall', 'iOS Simulator']
 const tiInspectorCmd = ['ti-inspector']
-const startDevCommonsCmd = ['node:kill-processes', 'validateXML', 'prettify']
+const startDevCommonsCmd = [
+	['node:kill-processes'].concat(shouldClean ? 'ti:clean': []), 'validateXML', 'prettify'
+]
 const startDevCmd = ['ti-inspector:start', 'ios:start']
 const startDevUICmd = ['ios:start-ui']
 const rootPath = './'
@@ -60,9 +64,9 @@ const spawnProcess = (_cmd, _cb) => {
 }
 
 const validateXML = () => obj(({
-	contents:_contents,
-	isNull:_isNull,
-	isStream:_isStream
+	contents: _contents,
+	isNull: _isNull,
+	isStream: _isStream
 }, _enc, _cb) => {
 	if (_isNull()) {
 		_cb(null)
@@ -98,10 +102,11 @@ gulp.task('watch', () => {
 	gulp.watch(xmlFilesPath, ['validateXML'])
 	gulp.watch(jsAppFilesPath, ['jscs'])
 })
+gulp.task('ti:clean', spawnProcess.bind(null, tiCleanProject))
 gulp.task('node:kill-processes', spawnProcess.bind(null, nodeKillProcessesCmd))
 gulp.task('ti-inspector:start', spawnProcess.bind(null, tiInspectorCmd))
 gulp.task('ios:kill', spawnProcess.bind(null, iosKillCmd))
 gulp.task('ios:start', ['ios:kill'], spawnProcess.bind(null, iosStartCmd))
 gulp.task('ios:start-ui', spawnProcess.bind(null, iosStartUICmd))
 gulp.task('start', _cb => runSequence(...startDevCommonsCmd, ...(ui ? startDevUICmd : startDevCmd), 'watch', _cb))
-gulp.task('default', _cb => runSequence('validateXML', 'prettify', 'ios:start', _cb))
+gulp.task('default', _cb => runSequence('ti:clean', 'validateXML', 'prettify', 'ios:start', _cb))

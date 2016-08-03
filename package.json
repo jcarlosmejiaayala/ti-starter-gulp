@@ -1,29 +1,23 @@
 {
-  "name": "DLL_HCOT",
+  "name": "Ti starter gulp",
   "version": "1.0.0",
-  "description": "DLL Express Finance === Titanium Alloy App --- ###Supported Platforms: * iPhone (iOS 7+) * Android (API 4.x+)",
+  "description": "Ti starter gulp",
   "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
     "test:gulp": "iron-node node_modules/gulp/bin/gulp.js start:dev",
     "start": "gulp --production",
     "init": "npm i ti-inspector -g & npm update -d && npm run start",
     "start:dev": "gulp start --development",
-    "start:dev-ui": "gulp start --ui --development"
+    "start:dev-ui": "gulp start --ui --development",
+    "clean": "gulp ti:clean"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/propelics/DLL_HCOT.git"
+    "url": "git+https://github.com/jcarlosmejiaayala/ti-starter-gulp.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/propelics/DLL_HCOT/issues"
-  },
-  "homepage": "https://github.com/propelics/DLL_HCOT#readme",
   "devDependencies": {
     "babel-cli": "^6.11.4",
     "babel-core": "^6.11.4",
