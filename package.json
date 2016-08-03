@@ -1,5 +1,5 @@
 {
-  "name": "Ti starter gulp",
+  "name": "",
   "version": "1.0.0",
   "description": "Ti starter gulp",
   "main": "index.js",
@@ -34,6 +34,7 @@
     "jshint": "^2.9.2",
     "jshint-stylish": "^2.2.0",
     "minimist": "^1.2.0",
+    "moment": "^2.14.1",
     "run-sequence": "^1.2.2",
     "through2": "^2.0.1",
     "xml2js": "^0.4.17"

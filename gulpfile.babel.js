@@ -2,6 +2,10 @@ import gulp from 'gulp'
 import gulpLoadPlugins from 'gulp-load-plugins'
 import runSequence from 'run-sequence'
 import minimist from 'minimist'
+import moment from 'moment'
+import {
+	createWriteStream
+} from 'fs'
 import {
 	dirname
 } from 'path'
@@ -9,7 +13,8 @@ import {
 	parseString
 } from 'xml2js'
 import {
-	spawn
+	spawn,
+	fork
 } from 'child_process'
 import {
 	obj
@@ -23,13 +28,13 @@ const {
 const tiCleanProject = ['ti', 'clean']
 const nodeKillProcessesCmd = ['killall', 'node']
 const iosStartCmd = ['ti', 'build', '-p', 'ios', '--tall', '--retina', '--debug-host',
-	'localhost:8999', '--quiet'
+	'localhost:8999'
 ]
 const iosStartUICmd = ['ti', 'build', '-p', 'ios', '--faster']
 const iosKillCmd = ['killall', 'iOS Simulator']
 const tiInspectorCmd = ['ti-inspector']
 const startDevCommonsCmd = [
-	['node:kill-processes'].concat(shouldClean ? 'ti:clean': []), 'validateXML', 'prettify'
+	['node:kill-processes'].concat(shouldClean ? 'ti:clean' : []), 'validateXML', 'prettify'
 ]
 const startDevCmd = ['ti-inspector:start', 'ios:start']
 const startDevUICmd = ['ios:start-ui']
@@ -53,9 +58,29 @@ const $ = gulpLoadPlugins({
 	replaceString: /^gulp(-|\.)/,
 })
 
+const tiBuildSpawnProcesses = (_cmd, _args) => {
+	const logger = createWriteStream('./debug.log', {
+		flags: 'a'
+	})
+	const shouldIncludeOnlyLogsFromApp = /^\[(ti:)?(INFO|DEBUG)\]/i
+	const buffer = spawn(_cmd, _args, {
+		stdio: ['ignore', 'pipe', 'ignore'],
+	})
+	const {
+		stdout
+	} = buffer
+
+	stdout.setEncoding('utf-8')
+	stdout.on('data', _data => {
+		shouldIncludeOnlyLogsFromApp.test(_data) && logger.write(`[${moment().format('kk:mm:ss')}] ${_data}`)
+	})
+	return buffer
+}
+
 const spawnProcess = (_cmd, _cb) => {
 	const [cmd, ...args] = _cmd
-	const buffer = spawn(cmd, args, {
+
+	const buffer = /^build$/i.test(args[0]) ? tiBuildSpawnProcesses(cmd, args) : spawn(cmd, args, {
 		stdio: 'ignore',
 	})
 	buffer.on('close', _code => !/^killall$/i.test(cmd) && console.log(
